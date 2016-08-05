@@ -1,0 +1,36 @@
+#!/bin/bash
+# elastalert   startup script for elastalert
+# pidfile:           /var/run/elastalert.pid
+# chkconfig: 2345 99 01
+
+NAME=elastalert
+PIDFILE=/var/run/$NAME.pid
+ELASTALERT_DIR=/app/elastalert
+ELASTALERT_USER=bdpadmin
+CONFIG_FILE=$ELASTALERT_DIR/config.yaml
+ELASTALERT=/usr/bin/$NAME
+
+. /etc/rc.d/init.d/functions
+
+case $1 in
+   start)
+      echo -n $"Starting $NAME: "
+      cd $ELASTALERT_DIR
+      daemon --user="$ELASTALERT_USER" --pidfile="$PIDFILE" "$ELASTALERT --config $CONFIG_FILE &"
+      RETVAL=$?
+      pid=`ps -ef | grep python | grep elastalert | awk '{print $2}'`
+      if [ -n "$pid" ]; then
+        echo $pid > "$PIDFILE"
+      fi
+   ;;
+   stop)
+      echo -n $"Stopping $NAME: "
+      killproc -p "$PIDFILE" -d 10 "$ELASTALERT"
+      RETVAL="$?"
+      echo
+      [ $RETVAL = 0 ] && rm -f "$PIDFILE"
+   ;;
+   *)
+      echo "Usage: /etc/init.d/elastalert {start|stop}" ;;
+esac
+exit 0
